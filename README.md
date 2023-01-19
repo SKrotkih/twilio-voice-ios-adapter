@@ -1,6 +1,6 @@
 # TwilioVoiceAdapter
 
-Refactoring of the actual original project [SwiftVoiceQuickstart](https://github.com/twilio/voice-quickstart-swift).
+This SPM package contains refactored codebase from original Twilio for iOS project [SwiftVoiceQuickstart](https://github.com/twilio/voice-quickstart-swift).
 
 ## Requirements
 
@@ -9,18 +9,19 @@ Refactoring of the actual original project [SwiftVoiceQuickstart](https://github
 
 ## Get started with TwilioVoiceAdapter 
 
-First of all you should implement TwilioAccessTokenFetcher class in this package or use your own in your app
+- Open *File* - *Add packages...* menu item. Enter `https://github.com/SKrotkih/twilio-voice-ios-adapter` in the *Search or Enter Package URL* filed. Select `twilio-voice-ios-adapter`, select `main` branch and select your project name in the `Add to Project`. Press on the `Add Package` button.  
+- To start using this code you should prepare an access token. Implement *TwilioAccessTokenFetcher* for that.
 
 ## Use case
 
-```
+```swift
 import TwilioVoiceAdapter
 ...
 let viewModel = ViewModel()
 ```
 
-and then update your UI with listening of the viewModel's publishers. See examples [TwilioSwiftUiQuickstart and TwilioUiKitQuickstart](https://github.com/SKrotkih/TwilioCallKitQuickstart) 
+and then update your app UI with listening of the *viewModel.swift* publishers. See examples in  [TwilioSwiftUiQuickstart and TwilioUiKitQuickstart](https://github.com/SKrotkih/TwilioCallKitQuickstart) projects. 
 
 ## Changes history:
 
-- 01-10-2023 - the package was created 
+- 01-10-2023 - first commit 
