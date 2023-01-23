@@ -23,7 +23,7 @@ import TwilioVoiceAdapter
 let viewModel = TwilioVoiceController()
 ```
 
-and then update your app UI with listening of the *viewModel.swift* publishers. See examples in  [TwilioSwiftUiQuickstart and TwilioUiKitQuickstart](https://github.com/SKrotkih/TwilioCallKitQuickstart) projects. 
+and then update your app UI with listening of the *TwilioVoiceController.swift* observable objects. See examples for UIKit and SwiftUI in [TwilioSwiftUiQuickstart and TwilioUIKitQuickstart ](https://github.com/SKrotkih/TwilioCallKitQuickstart) project.  
 
 ## Changes history:
 
