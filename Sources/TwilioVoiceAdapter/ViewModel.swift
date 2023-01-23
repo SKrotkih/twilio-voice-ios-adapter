@@ -1,5 +1,5 @@
 //
-//  ViewModel.swift
+//  TwilioVoiceController.swift
 //  TwilioVoicePackage
 //
 //  Created by Serhii Krotkykh
@@ -8,7 +8,7 @@ import UIKit
 import Combine
 
 /// The package entry point. Subscribe on its puvlished events to update user interface
-public class ViewModel: ObservableObject {
+public class TwilioVoiceController: ObservableObject {
     @Published public var enableMainButton = false
     @Published public var mainButtonTitle = "Call"
     @Published public var showCallControl = false
@@ -154,7 +154,7 @@ public class ViewModel: ObservableObject {
     }
 }
 
-extension ViewModel {
+extension TwilioVoiceController {
     /// Compute and publish Quality Warning message
     /// - Parameters:
     ///   - warnings:
