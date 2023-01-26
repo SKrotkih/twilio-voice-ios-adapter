@@ -21,6 +21,12 @@ Project Link: https://github.com/SKrotkih/twilio-voice-ios-adapter
 import TwilioVoiceAdapter
 ...
 let viewModel = TwilioVoiceController()
+...
+viewModel.$enableMainButton
+  .receive(on: RunLoop.main)
+  .sink { [weak self] enable in
+    self?.placeCallButton.isEnabled = enable
+  }.store(in: &disposableBag)
 ```
 
 and then update your app UI with listening of the *TwilioVoiceController.swift* observable objects. See examples for UIKit and SwiftUI in [TwilioSwiftUiQuickstart and TwilioUIKitQuickstart ](https://github.com/SKrotkih/TwilioCallKitQuickstart) project.  
