@@ -12,18 +12,17 @@ public protocol TwilioEvent {
 
 @resultBuilder
 public struct TwilioEventsBuilder {
-    public static func buildBlock(_ components: TwilioEvent...) -> TwilioVoiceController {
-        let controller = TwilioVoiceController()
-        for component in components {
-            component.perform(at: controller)
-        }
-        return controller
+    public static func buildBlock(_ components: TwilioEvent...) -> [TwilioEvent] {
+        components
     }
 }
 
 public extension TwilioVoiceController {
-    convenience init(@TwilioEventsBuilder _ builder: () -> TwilioVoiceController) {
+    convenience init(@TwilioEventsBuilder _ builder: () -> [TwilioEvent]) {
         self.init()
-        let _ = builder()
+        let components = builder()
+        for component in components {
+            component.perform(at: self)
+        }
     }
 }
