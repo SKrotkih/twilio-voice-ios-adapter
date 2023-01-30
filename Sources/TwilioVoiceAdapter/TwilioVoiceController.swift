@@ -7,8 +7,25 @@
 import UIKit
 import Combine
 
+public protocol TwilioVoiceControllable: ObservableObject {
+    var enableMainButton: Bool { get set}
+    var mainButtonTitle: String { get set }
+    var showCallControl: Bool { get set }
+    var onMute: Bool { get set }
+    var onSpeaker: Bool { get set }
+    var startLongTermProcess: Bool { get set }
+    var stopLongTermProcess: Bool { get set }
+    var warningText: String { get set }
+    func viewDidLoad(viewController: UIViewController)
+    func makeCallButtonPressed()
+    func toggleMuteSwitch(to isOn: Bool)
+    func toggleSpeakerSwitch(to isOn: Bool)
+    func saveOutgoingValue(_ value: String?)
+    func qualityWarningsUpdatePopup(_ warnings: Set<NSNumber>, isCleared: Bool)
+}
+
 /// The package entry point. Subscribe on its puvlished events to update user interface
-public class TwilioVoiceController: ObservableObject {
+public class TwilioVoiceController: TwilioVoiceControllable {
     @Published public var enableMainButton = false
     @Published public var mainButtonTitle = "Call"
     @Published public var showCallControl = false
