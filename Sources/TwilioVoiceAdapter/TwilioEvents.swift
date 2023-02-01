@@ -6,37 +6,78 @@
 import Foundation
 import Combine
 
-public class EnableMainButton: TwilioEvent {
-    private let closure: (Bool) -> Void
+public class CallButton: TwilioEvent {
+    typealias EnableClosure = (Bool) -> Void
+    typealias TitleClosure = (String) -> Void
+    private var enabledClosure: EnableClosure?
+    private var titleClosure: TitleClosure?
+
     private var disposableBag = Set<AnyCancellable>()
 
-    public init(_ closure: @escaping (Bool) -> Void) {
-        self.closure = closure
-    }
+    public init() { }
     
     public func perform(at controller: TwilioVoiceController) {
-        controller.$enableMainButton
-            .receive(on: RunLoop.main)
-            .sink { enable in
-                self.closure(enable)
-            }.store(in: &disposableBag)
+        if enabledClosure != nil {
+            controller.$enableMainButton
+                .receive(on: RunLoop.main)
+                .sink { enable in
+                    self.enabledClosure?(enable)
+                }.store(in: &disposableBag)
+        }
+        if titleClosure != nil {
+            controller.$mainButtonTitle
+                .receive(on: RunLoop.main)
+                .sink { title in
+                    self.titleClosure?(title)
+                }.store(in: &disposableBag)
+        }
+    }
+
+    @discardableResult public func onEnabled(_ closure: @escaping (Bool) -> Void) -> CallButton {
+        enabledClosure = closure
+        return self
+    }
+
+    @discardableResult public func onTitle(_ closure: @escaping (String?) -> Void) -> CallButton {
+        titleClosure = closure
+        return self
     }
 }
 
-public class MainButtonTitle: TwilioEvent {
-    private let closure: (String) -> Void
+public class LongTermProcess: TwilioEvent {
+    typealias Closure = () -> Void
+    private var onStartClosure: Closure?
+    private var onEndClosure: Closure?
+
     private var disposableBag = Set<AnyCancellable>()
 
-    public init(_ closure: @escaping (String) -> Void) {
-        self.closure = closure
+    public init() { }
+    
+    public func perform(at controller: TwilioVoiceController) {
+        if onStartClosure != nil {
+            controller.$startLongTermProcess
+                .receive(on: RunLoop.main)
+                .sink { [weak self] show in
+                    self?.onStartClosure?()
+                }.store(in: &disposableBag)
+        }
+        if onEndClosure != nil {
+            controller.$stopLongTermProcess
+                .receive(on: RunLoop.main)
+                .sink { [weak self] show in
+                    self?.onEndClosure?()
+                }.store(in: &disposableBag)
+        }
     }
 
-    public func perform(at controller: TwilioVoiceController) {
-        controller.$mainButtonTitle
-            .receive(on: RunLoop.main)
-            .sink { [weak self] title in
-                self?.closure(title)
-            }.store(in: &disposableBag)
+    @discardableResult public func onStart(_ closure: @escaping () -> Void) -> LongTermProcess {
+        onStartClosure = closure
+        return self
+    }
+
+    @discardableResult public func onEnd(_ closure: @escaping () -> Void) -> LongTermProcess {
+        onEndClosure = closure
+        return self
     }
 }
 
@@ -84,40 +125,6 @@ public class OnSpeaker: TwilioEvent {
 
     public func perform(at controller: TwilioVoiceController) {
         controller.$onSpeaker
-            .receive(on: RunLoop.main)
-            .sink { [weak self] show in
-                self?.closure(show)
-            }.store(in: &disposableBag)
-    }
-}
-
-public class StartLongTermProcess: TwilioEvent {
-    private let closure: (Bool) -> Void
-    private var disposableBag = Set<AnyCancellable>()
-
-    public init(_ closure: @escaping (Bool) -> Void) {
-        self.closure = closure
-    }
-
-    public func perform(at controller: TwilioVoiceController) {
-        controller.$startLongTermProcess
-            .receive(on: RunLoop.main)
-            .sink { [weak self] show in
-                self?.closure(show)
-            }.store(in: &disposableBag)
-    }
-}
-
-public class StopLongTermProcess: TwilioEvent {
-    private let closure: (Bool) -> Void
-    private var disposableBag = Set<AnyCancellable>()
-
-    public init(_ closure: @escaping (Bool) -> Void) {
-        self.closure = closure
-    }
-
-    public func perform(at controller: TwilioVoiceController) {
-        controller.$stopLongTermProcess
             .receive(on: RunLoop.main)
             .sink { [weak self] show in
                 self?.closure(show)
