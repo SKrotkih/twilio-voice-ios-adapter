@@ -81,71 +81,120 @@ public class LongTermProcess: TwilioEvent {
     }
 }
 
-public class ShowCallControl: TwilioEvent {
-    private let closure: (Bool) -> Void
+public class CallControl: TwilioEvent {
+    typealias Closure = () -> Void
+    private var onShowClosure: Closure?
+    private var onHideClosure: Closure?
     private var disposableBag = Set<AnyCancellable>()
-
-    public init(_ closure: @escaping (Bool) -> Void) {
-        self.closure = closure
+    public init() { }
+    
+    public func perform(at controller: TwilioVoiceController) {
+        if onShowClosure != nil || onHideClosure != nil {
+            controller.$showCallControl
+                .receive(on: RunLoop.main)
+                .sink { [weak self] show in
+                    if show {
+                        self?.onShowClosure?()
+                    } else {
+                        self?.onHideClosure?()
+                    }
+                }.store(in: &disposableBag)
+        }
     }
 
-    public func perform(at controller: TwilioVoiceController) {
-        controller.$showCallControl
-            .receive(on: RunLoop.main)
-            .sink { [weak self] show in
-                self?.closure(show)
-            }.store(in: &disposableBag)
+    @discardableResult public func onShow(_ closure: @escaping () -> Void) -> CallControl {
+        onShowClosure = closure
+        return self
+    }
+
+    @discardableResult public func onHide(_ closure: @escaping () -> Void) -> CallControl {
+        onHideClosure = closure
+        return self
     }
 }
 
-public class OnMute: TwilioEvent {
-    private let closure: (Bool) -> Void
+public class MuteControl: TwilioEvent {
+    typealias Closure = () -> Void
+    private var onMuteClosure: Closure?
+    private var offMuteClosure: Closure?
     private var disposableBag = Set<AnyCancellable>()
-
-    public init(_ closure: @escaping (Bool) -> Void) {
-        self.closure = closure
+    public init() { }
+    
+    public func perform(at controller: TwilioVoiceController) {
+        if onMuteClosure != nil || offMuteClosure != nil {
+            controller.$onMute
+                .receive(on: RunLoop.main)
+                .sink { [weak self] onMute in
+                    if onMute {
+                        self?.onMuteClosure?()
+                    } else {
+                        self?.offMuteClosure?()
+                    }
+                }.store(in: &disposableBag)
+        }
     }
 
-    public func perform(at controller: TwilioVoiceController) {
-        controller.$onMute
-            .receive(on: RunLoop.main)
-            .sink { [weak self] show in
-                self?.closure(show)
-            }.store(in: &disposableBag)
+    @discardableResult public func onMute(_ closure: @escaping () -> Void) -> MuteControl {
+        onMuteClosure = closure
+        return self
+    }
+
+    @discardableResult public func offMute(_ closure: @escaping () -> Void) -> MuteControl {
+        offMuteClosure = closure
+        return self
     }
 }
 
-public class OnSpeaker: TwilioEvent {
-    private let closure: (Bool) -> Void
+public class SpeackerControl: TwilioEvent {
+    typealias Closure = () -> Void
+    private var onSpeackerClosure: Closure?
+    private var offSpeackerClosure: Closure?
     private var disposableBag = Set<AnyCancellable>()
-
-    public init(_ closure: @escaping (Bool) -> Void) {
-        self.closure = closure
+    public init() { }
+    
+    public func perform(at controller: TwilioVoiceController) {
+        if onSpeackerClosure != nil || offSpeackerClosure != nil {
+            controller.$onSpeaker
+                .receive(on: RunLoop.main)
+                .sink { [weak self] onSpeacker in
+                    if onSpeacker {
+                        self?.onSpeackerClosure?()
+                    } else {
+                        self?.offSpeackerClosure?()
+                    }
+                }.store(in: &disposableBag)
+        }
     }
 
-    public func perform(at controller: TwilioVoiceController) {
-        controller.$onSpeaker
-            .receive(on: RunLoop.main)
-            .sink { [weak self] show in
-                self?.closure(show)
-            }.store(in: &disposableBag)
+    @discardableResult public func onSpeacker(_ closure: @escaping () -> Void) -> SpeackerControl {
+        onSpeackerClosure = closure
+        return self
+    }
+
+    @discardableResult public func offSpeacker(_ closure: @escaping () -> Void) -> SpeackerControl {
+        offSpeackerClosure = closure
+        return self
     }
 }
 
-public class WarningText: TwilioEvent {
-    private let closure: (String) -> Void
+public class CallResult: TwilioEvent {
+    typealias Closure = (String) -> Void
+    private var onWarningClosure: Closure?
     private var disposableBag = Set<AnyCancellable>()
-
-    public init(_ closure: @escaping (String) -> Void) {
-        self.closure = closure
+    public init() { }
+    
+    public func perform(at controller: TwilioVoiceController) {
+        if onWarningClosure != nil {
+            controller.$warningText
+                .receive(on: RunLoop.main)
+                .sink { [weak self] text in
+                    self?.onWarningClosure?(text)
+                }.store(in: &disposableBag)
+        }
     }
 
-    public func perform(at controller: TwilioVoiceController) {
-        controller.$warningText
-            .receive(on: RunLoop.main)
-            .sink { [weak self] text in
-                self?.closure(text)
-            }.store(in: &disposableBag)
+    @discardableResult public func onWarning(_ closure: @escaping (String) -> Void) -> CallResult {
+        onWarningClosure = closure
+        return self
     }
 }
-
