@@ -7,22 +7,22 @@
 import SwiftUI
 
 public protocol TwilioEvent {
-    func perform(at controller: TwilioVoiceController)
+    func happened(at controller: TwilioVoiceController)
 }
 
 @resultBuilder
 public struct TwilioEventsBuilder {
-    public static func buildBlock(_ components: TwilioEvent...) -> [TwilioEvent] {
-        components
+    public static func buildBlock(_ events: TwilioEvent...) -> [TwilioEvent] {
+        events
     }
 }
 
 public extension TwilioVoiceController {
     convenience init(@TwilioEventsBuilder _ builder: () -> [TwilioEvent]) {
         self.init()
-        let components = builder()
-        for component in components {
-            component.perform(at: self)
+        let events = builder()
+        for event in events {
+            event.happened(at: self)
         }
     }
 }

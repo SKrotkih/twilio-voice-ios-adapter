@@ -16,7 +16,7 @@ public class CallButton: TwilioEvent {
 
     public init() { }
     
-    public func perform(at controller: TwilioVoiceController) {
+    public func happened(at controller: TwilioVoiceController) {
         if enabledClosure != nil {
             controller.$enableMainButton
                 .receive(on: RunLoop.main)
@@ -53,7 +53,7 @@ public class LongTermProcess: TwilioEvent {
 
     public init() { }
     
-    public func perform(at controller: TwilioVoiceController) {
+    public func happened(at controller: TwilioVoiceController) {
         if onStartClosure != nil {
             controller.$startLongTermProcess
                 .receive(on: RunLoop.main)
@@ -88,7 +88,7 @@ public class CallControl: TwilioEvent {
     private var disposableBag = Set<AnyCancellable>()
     public init() { }
     
-    public func perform(at controller: TwilioVoiceController) {
+    public func happened(at controller: TwilioVoiceController) {
         if onShowClosure != nil || onHideClosure != nil {
             controller.$showCallControl
                 .receive(on: RunLoop.main)
@@ -120,7 +120,7 @@ public class MuteControl: TwilioEvent {
     private var disposableBag = Set<AnyCancellable>()
     public init() { }
     
-    public func perform(at controller: TwilioVoiceController) {
+    public func happened(at controller: TwilioVoiceController) {
         if onMuteClosure != nil || offMuteClosure != nil {
             controller.$onMute
                 .receive(on: RunLoop.main)
@@ -152,7 +152,7 @@ public class SpeackerControl: TwilioEvent {
     private var disposableBag = Set<AnyCancellable>()
     public init() { }
     
-    public func perform(at controller: TwilioVoiceController) {
+    public func happened(at controller: TwilioVoiceController) {
         if onSpeackerClosure != nil || offSpeackerClosure != nil {
             controller.$onSpeaker
                 .receive(on: RunLoop.main)
@@ -183,7 +183,7 @@ public class CallResult: TwilioEvent {
     private var disposableBag = Set<AnyCancellable>()
     public init() { }
     
-    public func perform(at controller: TwilioVoiceController) {
+    public func happened(at controller: TwilioVoiceController) {
         if onWarningClosure != nil {
             controller.$warningText
                 .receive(on: RunLoop.main)
