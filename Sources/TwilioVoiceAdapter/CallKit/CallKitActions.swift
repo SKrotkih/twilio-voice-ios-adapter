@@ -34,8 +34,19 @@ final class CallKitActions: NSObject, PhoneCallable {
     private let twilioCallDelegate: CallDelegate
     weak var pushKitEventDelegate: PushKitEventDelegate?
 
-    init(twilioCallDelegate: CallDelegate) {
+    init(appName: String,
+        twilioCallDelegate: CallDelegate,
+         callKitProviderDelegate: CallKitProviderDelegate) {
         self.twilioCallDelegate = twilioCallDelegate
+        /* Please note that the designated initializer `CXProviderConfiguration(localizedName: String)`
+         has been deprecated on iOS 14. */
+        let configuration = CXProviderConfiguration(localizedName: appName)
+        configuration.maximumCallGroups = 1
+        configuration.maximumCallsPerCallGroup = 1
+        callKitProvider = CXProvider(configuration: configuration)
+        if let provider = callKitProvider {
+            provider.setDelegate(callKitProviderDelegate, queue: nil)
+        }
     }
 
     func performVoiceCall(uuid: UUID, client: String?, to: String?, completionHandler: @escaping (Bool) -> Void) {

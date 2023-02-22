@@ -23,15 +23,21 @@ class Environment {
         let twilioNotificationsDelegate = TwilioNotificationDelegate()
         let callKitProviderDelegate = CallKitProviderDelegate(sharedData: sharedData)
         let pushNotificationsDelegate = PushNotificationsDelegate(
-            callKitDelegate: callKitProviderDelegate,
             notificationDelegate: twilioNotificationsDelegate
         )
         let voIpNotificationsDelegate = VoIpNotificationsDelegate(delegate: pushNotificationsDelegate)
         // TODO: Find out where it is used
         let _ = VoIpNotificationsCenter(notificationsDelegate: voIpNotificationsDelegate)
-
         let twilioCallDelegate = TwilioCallsDelegate(sharedData: sharedData)
-        callKitActions = CallKitActions(twilioCallDelegate: twilioCallDelegate)
+        var appName = ""
+        if let dictionary = Bundle.main.infoDictionary {
+            if let version: String = dictionary["CFBundleDisplayName"] as? String {
+                appName = version
+            }
+        }
+        callKitActions = CallKitActions(appName: appName,
+                                        twilioCallDelegate: twilioCallDelegate,
+                                        callKitProviderDelegate: callKitProviderDelegate)
         callKitActions.pushKitEventDelegate = pushNotificationsDelegate
     }
 }

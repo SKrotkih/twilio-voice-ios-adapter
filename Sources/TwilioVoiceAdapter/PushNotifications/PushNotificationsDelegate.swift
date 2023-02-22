@@ -25,36 +25,12 @@ class PushNotificationsDelegate: NSObject, PushKitEventDelegate {
 
     var activeCallInvites: [String: CallInvite]! = [:]
     var incomingPushCompletionCallback: (() -> Void)?
-    var callKitProvider: CXProvider?
 
-    weak var callKitDelegate: CallKitProviderDelegate?
     let notificationDelegate: NotificationDelegate
 
-    init(callKitDelegate: CallKitProviderDelegate,
-         notificationDelegate: NotificationDelegate) {
-        self.callKitDelegate = callKitDelegate
+    init(notificationDelegate: NotificationDelegate) {
         self.notificationDelegate = notificationDelegate
         super.init()
-        self.configureCallKitProvider()
-    }
-
-    deinit {
-        // CallKit has an odd API contract where the developer must call invalidate or the CXProvider is leaked.
-        if let provider = callKitProvider {
-            provider.invalidate()
-        }
-    }
-
-    func configureCallKitProvider() {
-       /* Please note that the designated initializer `CXProviderConfiguration(localizedName: String)`
-        has been deprecated on iOS 14. */
-        let configuration = CXProviderConfiguration(localizedName: appName)
-        configuration.maximumCallGroups = 1
-        configuration.maximumCallsPerCallGroup = 1
-        callKitProvider = CXProvider(configuration: configuration)
-        if let provider = callKitProvider {
-            provider.setDelegate(callKitDelegate, queue: nil)
-        }
     }
 
     func credentialsUpdated(credentials: PKPushCredentials) {
@@ -146,14 +122,5 @@ class PushNotificationsDelegate: NSObject, PushKitEventDelegate {
 
         incomingPushCompletionCallback = nil
         completion()
-    }
-
-    private var appName: String {
-        guard let dictionary = Bundle.main.infoDictionary else { return "" }
-        if let version: String = dictionary["CFBundleDisplayName"] as? String {
-           return version
-        } else {
-           return ""
-        }
     }
 }
