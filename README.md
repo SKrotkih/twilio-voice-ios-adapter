@@ -5,7 +5,7 @@ It wraps the Twilio Voice SDK, CallKit and PushKit behind one observable object,
 
 Project link: https://github.com/SKrotkih/twilio-voice-ios-adapter
 
-Example apps (UIKit and SwiftUI): [TwilioCallKitQuickstart](https://github.com/SKrotkih/TwilioCallKitQuickstart)
+Example app (SwiftUI): [TwilioCallKitQuickstart](https://github.com/SKrotkih/TwilioCallKitQuickstart)
 
 ## Features
 
@@ -176,67 +176,6 @@ struct ContentView<ViewModel: TwilioVoiceControllable>: View {
 }
 ```
 
-## UIKit example
-
-You can subscribe to the published properties with Combine:
-
-```swift
-viewModel.$enableMainButton
-    .receive(on: RunLoop.main)
-    .sink { [weak self] enable in self?.placeCallButton.isEnabled = enable }
-    .store(in: &disposableBag)
-```
-
-or describe the UI declaratively with the `TwilioEventsBuilder` result builder. Each event object subscribes to the matching published property and calls your closures on the main run loop:
-
-```swift
-import UIKit
-import TwilioVoiceAdapter
-
-class ViewController: UIViewController {
-    private var viewModel: TwilioVoiceController!
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        viewModel = TwilioVoiceController(accessTokenConfiguration: tokenConfiguration) {
-            CallButton()
-                .onEnabled { [weak self] in self?.placeCallButton.isEnabled = $0 }
-                .onTitle { [weak self] in self?.placeCallButton.setTitle($0, for: .normal) }
-            CallControl()
-                .onShow { [weak self] in self?.callControlView.isHidden = false }
-                .onHide { [weak self] in self?.callControlView.isHidden = true }
-            MuteControl()
-                .onMute { [weak self] in self?.muteSwitch.isOn = true }
-                .offMute { [weak self] in self?.muteSwitch.isOn = false }
-            SpeackerControl()
-                .onSpeacker { [weak self] in self?.speakerSwitch.isOn = true }
-                .offSpeacker { [weak self] in self?.speakerSwitch.isOn = false }
-            LongTermProcess()
-                .onStart { [weak self] in self?.spinner.startSpin() }
-                .onEnd { [weak self] in self?.spinner.stopSpin() }
-            CallResult()
-                .onWarning { [weak self] text in self?.qualityWarningsLabel.text = text }
-        }
-        viewModel.viewDidLoad(viewController: self)
-    }
-
-    @IBAction func makeCallButtonPressed(_ sender: Any) { viewModel.makeCallButtonPressed() }
-    @IBAction func muteSwitchToggled(_ sender: UISwitch) { viewModel.toggleMuteSwitch(to: sender.isOn) }
-    @IBAction func speakerSwitchToggled(_ sender: UISwitch) { viewModel.toggleSpeakerSwitch(to: sender.isOn) }
-}
-```
-
-| Event | Callbacks | Source property |
-| --- | --- | --- |
-| `CallButton` | `onEnabled(Bool)`, `onTitle(String?)` | `enableMainButton`, `mainButtonTitle` |
-| `CallControl` | `onShow`, `onHide` | `showCallControl` |
-| `MuteControl` | `onMute`, `offMute` | `onMute` |
-| `SpeackerControl` | `onSpeacker`, `offSpeacker` | `onSpeaker` |
-| `LongTermProcess` | `onStart`, `onEnd` | `startLongTermProcess`, `stopLongTermProcess` |
-| `CallResult` | `onWarning(String)` | `warningText` |
-
-You can also adopt the public `TwilioEvent` protocol (`func happened(at controller: TwilioVoiceController)`) to add your own events to the builder.
-
 ## How a call works
 
 **Outgoing call**
@@ -263,7 +202,7 @@ You can also adopt the public `TwilioEvent` protocol (`func happened(at controll
 | --- | --- |
 | `TwilioVoiceController.swift` | Public entry point and published UI state. |
 | `TwilioAccessTokenFetcher.swift` | `TwilioAccessTokenConfiguration` and the token request. |
-| `TwilioEvents.swift`, `TwilioEventsBuilder.swift` | Declarative UIKit events and the result builder. |
+| `TwilioEvents.swift`, `TwilioEventsBuilder.swift` | Closure-based event objects and the `TwilioEventsBuilder` result builder. |
 | `CallKit/` | `CallKitActions`: CallKit transactions, active calls and call invites. |
 | `PushNotifications/` | PushKit registry, push registration, `CXProviderDelegate`. |
 | `Twilio/` | Twilio `CallDelegate` / `NotificationDelegate` and the interactor that maps call events to UI events. |
