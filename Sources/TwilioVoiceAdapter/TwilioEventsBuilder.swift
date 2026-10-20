@@ -18,8 +18,9 @@ public struct TwilioEventsBuilder {
 }
 
 public extension TwilioVoiceController {
-    convenience init(@TwilioEventsBuilder _ builder: () -> [TwilioEvent]) {
-        self.init()
+    convenience init(accessTokenConfiguration: TwilioAccessTokenConfiguration,
+                     @TwilioEventsBuilder _ builder: () -> [TwilioEvent]) {
+        self.init(accessTokenConfiguration: accessTokenConfiguration)
         let events = builder()
         for event in events {
             event.happened(at: self)

@@ -35,7 +35,10 @@ public class TwilioVoiceController: TwilioVoiceControllable {
     @Published public var stopLongTermProcess = false
     @Published public var warningText = ""
 
-    public init() { }
+    /// - Parameter accessTokenConfiguration: Twilio access token server parameters
+    public init(accessTokenConfiguration: TwilioAccessTokenConfiguration) {
+        TwilioAccessTokenFetcher.configuration = accessTokenConfiguration
+    }
     
     var twilioVoice = TwilioInteractor(sharedData: ReduxStore.shared.environment.sharedData)
     private var disposableBag = Set<AnyCancellable>()

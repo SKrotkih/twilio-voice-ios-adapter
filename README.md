@@ -13,14 +13,20 @@ Project Link: https://github.com/SKrotkih/twilio-voice-ios-adapter
 ## Get started with TwilioVoiceAdapter 
 
 - Open your project in Xcode, navigate to **Menu -> File -> Add packages...** and enter [https://github.com/SKrotkih/twilio-voice-ios-adapter](https://github.com/SKrotkih/twilio-voice-ios-adapter) in the **Search or Enter Package URL** filed. Select `twilio-voice-ios-adapter`, select `main` branch and select your project name in the `Add to Project`. Press on the `Add Package` button.  
-- To start using this code you should prepare an access token. Implement *TwilioAccessTokenFetcher* for that.
+- To start using this code you need a Twilio access token server. Pass its parameters to `TwilioVoiceController` (see below).
 
 ## How to use?
 
 ```swift
 import TwilioVoiceAdapter
 ...
-let viewModel = TwilioVoiceController()
+let viewModel = TwilioVoiceController(
+    accessTokenConfiguration: TwilioAccessTokenConfiguration(
+        baseURLString: "https://your-token-server.com",
+        accessTokenEndpoint: "/accessToken",
+        identity: "alice"
+    )
+)
 ...
 viewModel.$enableMainButton
   .receive(on: RunLoop.main)
