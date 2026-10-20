@@ -27,6 +27,7 @@ class TwilioCallsDelegate: NSObject, CallDelegate {
         print("\(#function)")
         store.stateDispatch(action: .twilio(.callDidStopRinging))
         if let completion = callKitCompletionCallback {
+            callKitCompletionCallback = nil
             completion(true)
         }
 
@@ -49,6 +50,7 @@ class TwilioCallsDelegate: NSObject, CallDelegate {
         store.stateDispatch(action: .twilio(.callDidFailToConnect))
 
         if let completion = callKitCompletionCallback {
+            callKitCompletionCallback = nil
             completion(false)
         }
 
@@ -66,9 +68,12 @@ class TwilioCallsDelegate: NSObject, CallDelegate {
 
         store.stateDispatch(action: .twilio(.callDidDisconnect(error)))
 
-        if sharedData.userInitiatedDisconnect {
+        // A call ended from the app or the system UI is already ended in CallKit.
+        // Remote hang-ups and network failures have to be reported to CallKit here.
+        if !sharedData.userInitiatedDisconnect {
             store.stateDispatch(action: .callDidDisconnect(call, error))
         }
+        sharedData.userInitiatedDisconnect = false
 
         callDisconnected(call: call)
     }

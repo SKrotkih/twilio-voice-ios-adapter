@@ -17,6 +17,8 @@ enum TwilioNotifications {
  @return
  */
 class TwilioNotificationDelegate: NSObject, NotificationDelegate {
+    weak var callKitActions: PhoneCallable?
+
     func callInviteReceived(callInvite: CallInvite) {
         NSLog("callInviteReceived:")
 
@@ -36,12 +38,13 @@ class TwilioNotificationDelegate: NSObject, NotificationDelegate {
 
         let from = (callInvite.from ?? "Voice Bot").replacingOccurrences(of: "client:", with: "")
 
-        // Always report to CallKit
-        store.stateDispatch(action: .reportIncomingCall(from, callInvite.uuid))
-        store.stateDispatch(action: .useActiveCallInvite(callInvite))
+        // Always report to CallKit, and do it synchronously: since iOS 13 the incoming call
+        // must be reported before the PushKit completion handler is called, or iOS kills the app
+        callKitActions?.useActiveCallInvite(callInvite)
+        callKitActions?.reportIncomingCall(from: from, uuid: callInvite.uuid)
     }
 
     func cancelledCallInviteReceived(cancelledCallInvite: CancelledCallInvite, error: Error) {
-        store.stateDispatch(action: .cancelledCallInviteReceived(cancelledCallInvite, error))
+        callKitActions?.cancelledCallInviteReceived(cancelledCallInvite: cancelledCallInvite, error: error)
     }
 }

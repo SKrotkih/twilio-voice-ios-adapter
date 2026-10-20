@@ -10,7 +10,8 @@ import Foundation
 func callReducer(state: CallState,
                  action: CallAction,
                  environment: NetworkService) async throws -> CallState {
-    let newState = await Task {
+    // CallKit and the Twilio SDK are used from the main queue everywhere else, so run the side effects there too
+    let newState = await MainActor.run {
         let state = {
             switch action {
             case .twilio(let callState):
@@ -60,7 +61,7 @@ func callReducer(state: CallState,
             }
         }()
         return state
-    }.value
+    }
 
     return newState
 }

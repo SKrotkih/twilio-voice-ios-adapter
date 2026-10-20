@@ -12,22 +12,19 @@ let twimlParamTo = "to"
 /// CallKit framework CXProviderDelegate implementation
 class CallKitProviderDelegate: NSObject, CXProviderDelegate {
     private let sharedData: SharedData
+    private let audioDevice: DefaultAudioDevice
+    /// Owns the active calls and call invites
+    weak var callKitActions: CallKitActions?
 
-    var activeCallInvites: [String: CallInvite]! = [:]
-    var activeCalls: [String: Call]! = [:]
-    // activeCall represents the last connected call
-    var activeCall: Call?
-    let callKitCallController = CXCallController()
-
-    init(sharedData: SharedData) {
+    init(sharedData: SharedData, audioDevice: DefaultAudioDevice) {
         self.sharedData = sharedData
+        self.audioDevice = audioDevice
     }
-
-    var audioDevice = DefaultAudioDevice()
 
     func providerDidReset(_ provider: CXProvider) {
         print("\(#function)")
         audioDevice.isEnabled = false
+        callKitActions?.endAllCalls()
         store.stateDispatch(action: .callKit(.reset))
     }
 
@@ -57,6 +54,8 @@ class CallKitProviderDelegate: NSObject, CXProviderDelegate {
         print("\(#function)")
         store.stateDispatch(action: .callKit(.startTwilioCall))
 
+        // Keep the SDK audio off until CallKit activates the audio session
+        audioDevice.isEnabled = false
         provider.reportOutgoingCall(with: action.callUUID, startedConnectingAt: Date())
 
         store.stateDispatch(action: .performVoiceCall(action.callUUID, "", sharedData.outgoingValue) { success in
@@ -74,6 +73,8 @@ class CallKitProviderDelegate: NSObject, CXProviderDelegate {
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         print("\(#function)")
 
+        // Keep the SDK audio off until CallKit activates the audio session
+        audioDevice.isEnabled = false
         store.stateDispatch(action: .performAnswerVoiceCall(action.callUUID) { success in
             if success {
                 NSLog("performAnswerVoiceCall() successful")
@@ -87,12 +88,11 @@ class CallKitProviderDelegate: NSObject, CXProviderDelegate {
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         print("\(#function)")
 
-        if let invite = activeCallInvites[action.callUUID.uuidString] {
-            invite.reject()
-            activeCallInvites.removeValue(forKey: action.callUUID.uuidString)
-        } else if let call = activeCalls[action.callUUID.uuidString] {
-            call.disconnect()
-        } else {
+        // The call is ended locally, so CallKit doesn't need to be told about the disconnect later
+        if callKitActions?.isActiveCall(uuid: action.callUUID) == true {
+            sharedData.userInitiatedDisconnect = true
+        }
+        if callKitActions?.endCall(uuid: action.callUUID) != true {
             NSLog("Unknown UUID to perform end-call action with")
         }
         store.stateDispatch(action: .callKit(.endTwilioCall))
@@ -102,8 +102,7 @@ class CallKitProviderDelegate: NSObject, CXProviderDelegate {
     func provider(_ provider: CXProvider, perform action: CXSetHeldCallAction) {
         print("\(#function)")
 
-        if let call = activeCalls[action.callUUID.uuidString] {
-            call.isOnHold = action.isOnHold
+        if callKitActions?.setHeld(action.isOnHold, uuid: action.callUUID) == true {
             action.fulfill()
         } else {
             action.fail()
@@ -113,8 +112,7 @@ class CallKitProviderDelegate: NSObject, CXProviderDelegate {
     func provider(_ provider: CXProvider, perform action: CXSetMutedCallAction) {
         print("\(#function)")
 
-        if let call = activeCalls[action.callUUID.uuidString] {
-            call.isMuted = action.isMuted
+        if callKitActions?.setMuted(action.isMuted, uuid: action.callUUID) == true {
             action.fulfill()
         } else {
             action.fail()

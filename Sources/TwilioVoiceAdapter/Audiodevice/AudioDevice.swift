@@ -7,15 +7,11 @@ import TwilioVoice
 
 /// AVAudioSession
 class AudioDeviceManager {
-    private var audioDevice = DefaultAudioDevice()
+    private let audioDevice: DefaultAudioDevice
 
-    init() {
-        /*
-         * The important thing to remember when providing a TVOAudioDevice is that the device must be set
-         * before performing any other actions with the SDK (such as connecting a Call, or accepting an incoming Call).
-         * In this case we've already initialized our own `TVODefaultAudioDevice` instance which we will now set.
-         */
-        TwilioVoiceSDK.audioDevice = audioDevice
+    /// - Parameter audioDevice: the device already set as `TwilioVoiceSDK.audioDevice`
+    init(audioDevice: DefaultAudioDevice) {
+        self.audioDevice = audioDevice
     }
 
     func toggleAudioRoute(toSpeaker: Bool) {
