@@ -53,14 +53,20 @@ public class TwilioVoiceController: TwilioVoiceControllable {
     
     private var dependencies = Dependencies()
     private var viewController: UIViewController?
+    private var isConfigured = false
+    private var microphoneCheck: AnyCancellable?
     
     /// Required method.
     /// Call this method on view initiate stage
     /// - Parameter viewController: UIViewController used for alerts
     public func viewDidLoad(viewController: UIViewController) {
         self.viewController = viewController
+        // SwiftUI can call this more than once (onAppear), configure only the first time
+        guard !isConfigured else { return }
+        isConfigured = true
         dependencies.configure(for: self)
         startListeningToStateChanges()
+        twilioVoice.viewDidLoad()
     }
 
     private func startListeningToStateChanges() {
@@ -132,12 +138,19 @@ public class TwilioVoiceController: TwilioVoiceControllable {
         twilioVoice.endCall { [weak self] callIsEnded in
             guard let self else { return }
             if callIsEnded {
+                // "Hang Up" was pressed: the call is ending, don't start a new one
                 self.enableMainButton = false
                 self.showCallControl = false
+            } else {
+                self.startCallAfterMicrophoneCheck()
             }
         }
+    }
+
+    private func startCallAfterMicrophoneCheck() {
         guard let viewController = self.viewController else { return }
-        microphoneManager.checkPermission(with: viewController)
+        microphoneCheck = microphoneManager.checkPermission(with: viewController)
+            .receive(on: RunLoop.main)
             .sink { [weak self] result in
                 guard let self else { return }
                 switch result {
@@ -149,7 +162,7 @@ public class TwilioVoiceController: TwilioVoiceControllable {
                     self.stopLongTermProcess = true
                     self.startLongTermProcess = false
                 }
-            }.store(in: &disposableBag)
+            }
     }
     
     /// Handle Mute button event

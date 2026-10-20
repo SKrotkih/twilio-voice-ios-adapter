@@ -6,7 +6,7 @@ import Foundation
 import CallKit
 import TwilioVoice
 
-protocol PhoneCallable {
+protocol PhoneCallable: AnyObject {
     func performVoiceCall(uuid: UUID, client: String?, to: String?, completionHandler: @escaping (Bool) -> Void)
     func performAnswerVoiceCall(uuid: UUID, completionHandler: @escaping (Bool) -> Void)
     func performStartCallAction(uuid: UUID, handle: String)
@@ -25,19 +25,21 @@ protocol PhoneCallable {
 /// Make call action and other ones with using CallKit framework
 final class CallKitActions: NSObject, PhoneCallable {
     let callKitCallController = CXCallController()
-    var callKitCompletionCallback: ((Bool) -> Void)?
     var callKitProvider: CXProvider?
     var activeCalls: [String: Call] = [:]
     var activeCallInvites: [String: CallInvite] = [:]
     // activeCall represents the last connected call
     private var activeCall: Call?
-    private let twilioCallDelegate: CallDelegate
+    private let twilioCallDelegate: TwilioCallsDelegate
+    // CXProvider holds its delegate weakly, so keep a strong reference here
+    private let callKitProviderDelegate: CallKitProviderDelegate
     weak var pushKitEventDelegate: PushKitEventDelegate?
 
     init(appName: String,
-        twilioCallDelegate: CallDelegate,
+         twilioCallDelegate: TwilioCallsDelegate,
          callKitProviderDelegate: CallKitProviderDelegate) {
         self.twilioCallDelegate = twilioCallDelegate
+        self.callKitProviderDelegate = callKitProviderDelegate
         /* Please note that the designated initializer `CXProviderConfiguration(localizedName: String)`
          has been deprecated on iOS 14. */
         let configuration = CXProviderConfiguration(localizedName: appName)
@@ -55,15 +57,16 @@ final class CallKitActions: NSObject, PhoneCallable {
             builder.params = [twimlParamTo: to ?? ""]
             builder.uuid = uuid
         }
+        twilioCallDelegate.callKitCompletionCallback = completionHandler
         let call = TwilioVoiceSDK.connect(options: connectOptions, delegate: twilioCallDelegate)
         activeCall = call
         activeCalls[call.uuid!.uuidString] = call
-        callKitCompletionCallback = completionHandler
     }
 
     func performAnswerVoiceCall(uuid: UUID, completionHandler: @escaping (Bool) -> Void) {
         guard let callInvite = activeCallInvites[uuid.uuidString] else {
             NSLog("No CallInvite matches the UUID")
+            completionHandler(false)
             return
         }
 
@@ -71,10 +74,10 @@ final class CallKitActions: NSObject, PhoneCallable {
             builder.uuid = callInvite.uuid
         }
 
+        twilioCallDelegate.callKitCompletionCallback = completionHandler
         let call = callInvite.accept(options: acceptOptions, delegate: twilioCallDelegate)
         activeCall = call
         activeCalls[call.uuid!.uuidString] = call
-        callKitCompletionCallback = completionHandler
 
         activeCallInvites.removeValue(forKey: uuid.uuidString)
 
@@ -171,9 +174,57 @@ final class CallKitActions: NSObject, PhoneCallable {
     }
 
     func setUpMuteForActiveCall(_ isMuted: Bool) {
-        if let call = activeCall {
-            call.isMuted = isMuted
+        // Go through CallKit so the system call UI stays in sync with the app
+        guard let uuid = activeCall?.uuid else { return }
+
+        let muteCallAction = CXSetMutedCallAction(call: uuid, muted: isMuted)
+        let transaction = CXTransaction(action: muteCallAction)
+
+        callKitCallController.request(transaction) { error in
+            if let error = error {
+                NSLog("SetMutedCallAction transaction request failed: \(error.localizedDescription).")
+            }
         }
+    }
+
+    // MARK: - CXProviderDelegate support
+
+    func isActiveCall(uuid: UUID) -> Bool {
+        activeCalls[uuid.uuidString] != nil
+    }
+
+    /// Rejects the pending invite or disconnects the call with this UUID
+    /// - Returns: false if there is no invite or call with this UUID
+    func endCall(uuid: UUID) -> Bool {
+        if let invite = activeCallInvites.removeValue(forKey: uuid.uuidString) {
+            invite.reject()
+            pushKitEventDelegate?.incomingPushHandled()
+            return true
+        } else if let call = activeCalls[uuid.uuidString] {
+            call.disconnect()
+            return true
+        }
+        return false
+    }
+
+    func setMuted(_ isMuted: Bool, uuid: UUID) -> Bool {
+        guard let call = activeCalls[uuid.uuidString] else { return false }
+        call.isMuted = isMuted
+        return true
+    }
+
+    func setHeld(_ isOnHold: Bool, uuid: UUID) -> Bool {
+        guard let call = activeCalls[uuid.uuidString] else { return false }
+        call.isOnHold = isOnHold
+        return true
+    }
+
+    func endAllCalls() {
+        activeCallInvites.values.forEach { $0.reject() }
+        activeCallInvites.removeAll()
+        activeCalls.values.forEach { $0.disconnect() }
+        activeCalls.removeAll()
+        activeCall = nil
     }
 
     func performEndCallAction() {
@@ -207,8 +258,9 @@ final class CallKitActions: NSObject, PhoneCallable {
         let callInvite = activeCallInvites.values.first { invite in invite.callSid == cancelledCallInvite.callSid }
 
         if let callInvite = callInvite {
-            performEndCallAction(uuid: callInvite.uuid)
-            self.activeCallInvites.removeValue(forKey: callInvite.uuid.uuidString)
+            // The caller hung up: tell CallKit directly, the invite must not be rejected again
+            activeCallInvites.removeValue(forKey: callInvite.uuid.uuidString)
+            callKitProvider?.reportCall(with: callInvite.uuid, endedAt: Date(), reason: .remoteEnded)
         }
     }
 }

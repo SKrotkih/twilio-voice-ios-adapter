@@ -55,7 +55,10 @@ class MicrophoneManager: MicrophoneManageable {
         case .undetermined:
             // Requesting record permission.
             // Optional: pop up app dialog to let the users know if they want to request.
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in completion(granted) }
+            // The callback comes on an arbitrary queue, and the denied branch shows an alert
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async { completion(granted) }
+            }
         default:
             completion(false)
         }

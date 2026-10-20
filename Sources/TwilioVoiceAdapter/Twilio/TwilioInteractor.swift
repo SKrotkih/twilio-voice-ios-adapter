@@ -129,7 +129,8 @@ class TwilioInteractor: ObservableObject, TwilioVoice {
      */
     func startCall() {
         let uuid = UUID()
-        let handle = "Voice Bot"
+        let outgoingValue = sharedData.outgoingValue ?? ""
+        let handle = outgoingValue.isEmpty ? "Voice Bot" : outgoingValue
         self.sharedData.userInitiatedDisconnect = false
         store.stateDispatch(action: .performStartCallAction(uuid, handle))
     }

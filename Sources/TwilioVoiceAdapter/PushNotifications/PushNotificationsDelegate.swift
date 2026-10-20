@@ -77,7 +77,8 @@ class PushNotificationsDelegate: NSObject, PushKitEventDelegate {
         components.setValue(kRegistrationTTLInDays/2, for: .day)
 
         if let expirationDate = Calendar.current.date(byAdding: components, to: lastBindingCreated) {
-            return  expirationDate.compare(date) == ComparisonResult.orderedDescending
+            // Registration is required once half of the TTL has passed
+            return expirationDate.compare(date) == ComparisonResult.orderedAscending
         }
 
         return true
